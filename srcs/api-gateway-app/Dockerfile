@@ -1,11 +1,21 @@
-FROM python:3.12-alpine
+# Use a stable and lightweight base image
+FROM python:3.11-slim
 
-WORKDIR /usr/src/
+# Set working directory
+WORKDIR /app
 
-COPY requirements.txt ./
+# Copy dependency list
+COPY requirements.txt .
 
-RUN pip install --no-cache-dir -r requirements.txt
+# Upgrade pip and install dependencies
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
+# Copy the rest of the source code
 COPY . .
 
-CMD ["python", "server.py"]
+# Expose the port your Flask app runs on (optional, adjust if needed)
+EXPOSE 5000
+
+# Run the application
+CMD ["python3", "server.py"]
