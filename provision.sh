@@ -5,8 +5,8 @@ echo "================================================"
 echo "Starting provisioning..."
 echo "================================================"
 
-# --- Determine project root dynamically ---
-APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# --- Project directory inside VM ---
+APP_DIR="/home/vagrant/app"
 ENV_FILE="$APP_DIR/.env"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 
@@ -72,10 +72,10 @@ else
     echo ".env file already exists."
 fi
 
-# --- Skip chown on VirtualBox synced folders ---
-# VirtualBox shared folders do not support chown properly, already set in Vagrantfile
+# --- Ensure correct permissions ---
+sudo chown -R $USER:$USER "$APP_DIR"
 
-# --- Check docker-compose.yml ---
+# --- Check docker-compose.yml existence ---
 if [ ! -f "$COMPOSE_FILE" ]; then
     echo "Error: docker-compose.yml not found in project directory."
     exit 1
