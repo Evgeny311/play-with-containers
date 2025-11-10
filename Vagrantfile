@@ -17,34 +17,21 @@ Vagrant.configure("2") do |config|
   # Network Configuration
   config.vm.hostname = "docker-vm"
   config.vm.network "private_network", ip: "192.168.56.10"
-  
-  # Port Forwarding - только API Gateway доступен снаружи
+
+  # Port Forwarding - only API Gateway exposed outside
   config.vm.network "forwarded_port", guest: 3000, host: 3000, host_ip: "127.0.0.1"
 
-  # Sync folders
-  config.vm.synced_folder "./srcs", "/home/vagrant/app", 
-    owner: "vagrant", 
-    group: "vagrant"
-  
-  config.vm.synced_folder "./scripts", "/home/vagrant/scripts",
+  # Sync project folder dynamically
+  config.vm.synced_folder "./srcs", "/home/vagrant/app",
     owner: "vagrant",
     group: "vagrant"
 
-  # Provision 1: Install Docker
-  config.vm.provision "shell", 
-    name: "install-docker",
-    path: "scripts/install_docker.sh"
-
-  # Provision 2: Setup Environment
+  # Provision: single shell script to install Docker, setup environment, and run containers
   config.vm.provision "shell",
-    name: "setup-environment", 
-    path: "scripts/setup_environment.sh"
+    name: "provision-all",
+    path: "provision.sh",
+    privileged: true
 
-  # Provision 3: Run Containers
-  config.vm.provision "shell",
-    name: "run-containers",
-    path: "scripts/run_containers.sh",
-    privileged: false
 
   # Message after 'vagrant up'
   config.vm.post_up_message = <<-MESSAGE
@@ -52,7 +39,7 @@ Vagrant.configure("2") do |config|
     ║  Play with Containers - VM is ready!                       ║
     ╠════════════════════════════════════════════════════════════╣
     ║                                                            ║
-    ║  🚀 API Gateway: http://localhost:3000                     ║
+    ║  API Gateway: http://localhost:3000                     ║
     ║                                                            ║
     ║  Useful commands:                                          ║
     ║  • vagrant ssh              - Access the VM                ║
