@@ -6,7 +6,7 @@ echo "Starting provisioning..."
 echo "================================================"
 
 # --- Determine project root dynamically ---
-APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$APP_DIR/.env"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 
@@ -29,7 +29,6 @@ if ! command -v docker &>/dev/null; then
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
     sudo usermod -aG docker $USER
-    newgrp docker || true
     sudo systemctl enable docker
     sudo systemctl start docker
 
@@ -49,6 +48,7 @@ if [ ! -f "$ENV_FILE" ]; then
     else
         echo "Warning: .env.example not found! Creating minimal .env..."
         cat <<EOF > "$ENV_FILE"
+# Minimal default environment variables
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=secure_password_123
 INVENTORY_DB_NAME=inventory_db
@@ -72,8 +72,8 @@ else
     echo ".env file already exists."
 fi
 
-# --- Ensure correct permissions ---
-sudo chown -R $USER:$USER "$APP_DIR"
+# --- Skip chown on VirtualBox synced folders ---
+# VirtualBox shared folders do not support chown properly, already set in Vagrantfile
 
 # --- Check docker-compose.yml ---
 if [ ! -f "$COMPOSE_FILE" ]; then
@@ -81,17 +81,10 @@ if [ ! -f "$COMPOSE_FILE" ]; then
     exit 1
 fi
 
-# --- Determine docker-compose command ---
-if command -v docker-compose &>/dev/null; then
-    DC="docker-compose"
-else
-    DC="docker compose"
-fi
-
 # --- Build and start containers ---
 echo "Building and starting Docker containers..."
-$DC -f "$COMPOSE_FILE" build
-$DC -f "$COMPOSE_FILE" up -d
+docker compose -f "$COMPOSE_FILE" build
+docker compose -f "$COMPOSE_FILE" up -d
 
 echo ""
 echo "Waiting for services to stabilize..."
@@ -99,10 +92,10 @@ sleep 10
 
 echo ""
 echo "Container status:"
-$DC -f "$COMPOSE_FILE" ps
+docker compose -f "$COMPOSE_FILE" ps
 
 echo ""
 echo "All containers should be running!"
 echo "API Gateway available at: http://localhost:3000"
-echo "Use '$DC logs -f' to view logs."
+echo "Use 'docker compose logs -f' to view logs."
 echo "================================================"
