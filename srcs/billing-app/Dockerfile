@@ -1,19 +1,15 @@
-# Use stable slim base image for compatibility
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
-# Set working directory
 WORKDIR /app
 
-# Copy requirements and upgrade pip
+# Install dependencies
 COPY requirements.txt .
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the source code
+# Copy application code
 COPY . .
 
-# Expose the port (optional, if needed)
-EXPOSE 5001
+EXPOSE 8080
 
 # Run the application
-ENTRYPOINT ["python3", "server.py"]
+CMD ["python", "server.py"]

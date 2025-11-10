@@ -1,13 +1,8 @@
-from waitress import serve
-from app import create_app
 import os
-
-# --- Use default port 5002 if APP_PORT is not set ---
-PORT = os.getenv("APP_PORT", "5002")
+from app import create_app
 
 app = create_app()
 
-print(f"Inventory app listening on port {PORT}...")
-
-# --- Start the server ---
-serve(app, listen=f"*:{PORT}")
+if __name__ == '__main__':
+    port = int(os.getenv('APP_PORT', 8080))
+    app.run(host='0.0.0.0', port=port, debug=False)

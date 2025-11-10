@@ -1,21 +1,18 @@
-# Use a stable and lightweight base image
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
-# Set working directory
 WORKDIR /app
 
-# Copy dependency list
+# Install dependencies
 COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Upgrade pip and install dependencies
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-
-# Copy the rest of the source code
+# Copy application code
 COPY . .
 
-# Expose the port your Flask app runs on (optional, adjust if needed)
-EXPOSE 5000
+# Create logs directory
+RUN mkdir -p /var/log/gateway
+
+EXPOSE 3000
 
 # Run the application
-CMD ["python3", "server.py"]
+CMD ["python", "server.py"]

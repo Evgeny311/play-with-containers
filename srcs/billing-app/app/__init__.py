@@ -14,7 +14,7 @@ def create_app():
     db.init_app(app)
     
     # Register routes
-    from app.routes import movies_bp
-    app.register_blueprint(movies_bp, url_prefix='/api')
+    from app.routes import orders_bp
+    app.register_blueprint(orders_bp, url_prefix='/api')
     
     return app

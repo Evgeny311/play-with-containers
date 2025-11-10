@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  # ==================== DATABASES ====================
+  inventory-db:
+    build: ./srcs/inventory-db
+    container_name: inventory-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${INVENTORY_DB_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - inventory-db:/var/lib/postgresql/data
+    ports:
+      - "${INVENTORY_DB_PORT}:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${INVENTORY_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  billing-db:
+    build: ./srcs/billing-db
+    container_name: billing-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${BILLING_DB_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - billing-db:/var/lib/postgresql/data
+    ports:
+      - "${BILLING_DB_PORT}:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${BILLING_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== MESSAGE QUEUE ====================
+  rabbit-queue:
+    build: ./srcs/rabbit-queue
+    container_name: rabbit-queue
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== APPLICATIONS ====================
+  inventory-app:
+    build: ./srcs/inventory-app
+    container_name: inventory-app
+    restart: always
+    environment:
+      DB_HOST: inventory-db
+      DB_PORT: 5432
+      DB_NAME: ${INVENTORY_DB_NAME}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      APP_PORT: 8080
+    ports:
+      - "${INVENTORY_APP_PORT}:8080"
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  billing-app:
+    build: ./srcs/billing-app
+    container_name: billing-app
+    restart: always
+    environment:
+      DB_HOST: billing-db
+      DB_PORT: 5432
+      DB_NAME: ${BILLING_DB_NAME}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
+      APP_PORT: 8080
+    ports:
+      - "${BILLING_APP_PORT}:8080"
+    depends_on:
+      billing-db:
+        condition: service_healthy
+      rabbit-queue:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  api-gateway-app:
+    build: ./srcs/api-gateway-app
+    container_name: api-gateway-app
+    restart: always
+    environment:
+      INVENTORY_SERVICE_URL: ${INVENTORY_SERVICE_URL}
+      BILLING_SERVICE_URL: ${BILLING_SERVICE_URL}
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
+      APP_PORT: 3000
+    ports:
+      - "${API_GATEWAY_PORT}:3000"
+    volumes:
+      - api-gateway-app:/var/log/gateway
+    depends_on:
+      - inventory-app
+      - billing-app
+      - rabbit-queue
+    networks:
+      - app-network
+
+# ==================== NETWORKS ====================
+networks:
+  app-network:
+    driver: bridge
+
+# ==================== VOLUMES ====================
+volumes:
+  inventory-db:
+    name: inventory-db
+  billing-db:
+    name: billing-db
+  api-gateway-app:
+    name: api-gateway-app
