@@ -5,7 +5,8 @@ echo "================================================"
 echo "Starting Docker containers..."
 echo "================================================"
 
-APP_DIR="/home/vagrant/app"
+# Use current directory as app directory
+APP_DIR="$(pwd)"
 
 # Navigate to app directory
 cd "$APP_DIR"
@@ -24,7 +25,7 @@ echo "Container status:"
 docker compose ps
 
 echo ""
-echo " All containers are running!"
+echo "All containers are running!"
 echo ""
 echo "Access the API at: http://localhost:3000"
 echo "Run 'docker compose logs -f' to view logs"

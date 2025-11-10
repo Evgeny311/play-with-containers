@@ -5,7 +5,7 @@ echo "================================================"
 echo "Setting up environment..."
 echo "================================================"
 
-APP_DIR="/home/vagrant/app"
+APP_DIR="$(pwd)"
 
 # Check if .env exists, if not create from .env.example
 if [ ! -f "$APP_DIR/.env" ]; then
@@ -17,7 +17,9 @@ else
 fi
 
 # Set proper permissions
-chown -R vagrant:vagrant "$APP_DIR"
+if id "vagrant" &>/dev/null; then
+    chown -R vagrant:vagrant "$PROJECT_DIR"
+fi
 
 echo ""
 echo "Environment setup completed!"
