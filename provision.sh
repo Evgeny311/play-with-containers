@@ -29,6 +29,7 @@ if ! command -v docker &>/dev/null; then
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
     sudo usermod -aG docker $USER
+    newgrp docker || true
     sudo systemctl enable docker
     sudo systemctl start docker
 
@@ -48,7 +49,6 @@ if [ ! -f "$ENV_FILE" ]; then
     else
         echo "Warning: .env.example not found! Creating minimal .env..."
         cat <<EOF > "$ENV_FILE"
-# Minimal default environment variables
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=secure_password_123
 INVENTORY_DB_NAME=inventory_db
@@ -81,10 +81,17 @@ if [ ! -f "$COMPOSE_FILE" ]; then
     exit 1
 fi
 
+# --- Determine docker-compose command ---
+if command -v docker-compose &>/dev/null; then
+    DC="docker-compose"
+else
+    DC="docker compose"
+fi
+
 # --- Build and start containers ---
 echo "Building and starting Docker containers..."
-docker compose -f "$COMPOSE_FILE" build
-docker compose -f "$COMPOSE_FILE" up -d
+$DC -f "$COMPOSE_FILE" build
+$DC -f "$COMPOSE_FILE" up -d
 
 echo ""
 echo "Waiting for services to stabilize..."
@@ -92,10 +99,10 @@ sleep 10
 
 echo ""
 echo "Container status:"
-docker compose -f "$COMPOSE_FILE" ps
+$DC -f "$COMPOSE_FILE" ps
 
 echo ""
 echo "All containers should be running!"
 echo "API Gateway available at: http://localhost:3000"
-echo "Use 'docker compose logs -f' to view logs."
+echo "Use '$DC logs -f' to view logs."
 echo "================================================"

@@ -21,8 +21,8 @@ Vagrant.configure("2") do |config|
   # Port Forwarding - only API Gateway exposed outside
   config.vm.network "forwarded_port", guest: 3000, host: 3000, host_ip: "127.0.0.1"
 
-  # Sync project folder dynamically
-  config.vm.synced_folder "./srcs", "/home/vagrant/app",
+  # Sync entire project folder
+  config.vm.synced_folder ".", "/home/vagrant/app",
     owner: "vagrant",
     group: "vagrant"
 
@@ -31,7 +31,7 @@ Vagrant.configure("2") do |config|
     name: "provision-all",
     path: "provision.sh",
     privileged: true
-
+    
 
   # Message after 'vagrant up'
   config.vm.post_up_message = <<-MESSAGE
